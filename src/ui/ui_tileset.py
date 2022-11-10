@@ -1,12 +1,12 @@
 import pygame as pg
-from tile import Tile
+from src.block import Block
 
 class TileSet:
     def __init__(self, tile_size = (8, 8)) -> None:
         self.tiles = []
         self.tile_size = tile_size
 
-    def add(self, t : Tile):
+    def add(self, t : Block):
         self.tiles.append(t)
 
     def tile(self, index : int):
