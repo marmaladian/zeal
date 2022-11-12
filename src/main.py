@@ -148,7 +148,7 @@ def main():
     world.set_current_map(test_map)
     world.next_actor()
 
-    ui = UIManager((34, 23), ts, (8, 8), (32, 21))
+    ui_mgr = UIManager(screen_buffer, (34, 23), ts, (8, 8), (32, 21))
 
     running = True
     action: Action = None
@@ -156,7 +156,7 @@ def main():
     while running:
   
         while not action:
-            action = world.curr_actor.next_action(world)
+            action = world.curr_actor.next_action(world, ui_mgr)
         if type(action) is ActionQuit:
             running = False
         else:
@@ -166,13 +166,9 @@ def main():
         action = None
 
         # RENDER
-
-        # TODO treat map view as portal - i.e. render region of it
-        # TODO move old TileMap stuff into a UI thing
-        # TODO split tiles from sprites
         
-        ui.render(world.map, player.position[2])
-        screen_buffer.blit(ui.surface, (0, 0))
+        ui_mgr.render(world.map, player.position[2])
+        screen_buffer.blit(ui_mgr.surface, (0, 0))
         # player.draw(screen_buffer)
         
         # RESIZE

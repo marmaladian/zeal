@@ -16,7 +16,7 @@ class Monster(Actor):
                             # ActionWalk(self, ( 0,  0, -1))
                             ]
 
-    def next_action(self, world: World):
+    def next_action(self, world: World, ui):
         return random.choice(self.action_list)
             
     

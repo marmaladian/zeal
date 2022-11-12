@@ -3,14 +3,15 @@ import pygame as pg
 from pygame.locals import *
 
 from actor import Actor
-
+from ui.ui_controls import UI_CheckboxList
+from ui.ui_manager import UIManager
 
 class Player(Actor):
 
     def __init__(self, tile_id) -> None:
         super().__init__(tile_id)
 
-    def next_action(self, world: World):
+    def next_action(self, world: World, ui_manager):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return ActionQuit()
@@ -32,6 +33,8 @@ class Player(Actor):
                     x, y, z = self.position
                     items = world.map.layers[z].items.get((x, y))
                     # show UI for pickup
+                    ui_manager.active_ui = UI_CheckboxList((0, 0), items)
+
                     # but first we'll just pickup everything at the site
 
                     # return a list of items or None
