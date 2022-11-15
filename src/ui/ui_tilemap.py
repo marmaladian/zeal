@@ -31,11 +31,17 @@ class UITileMap:
                 self.surface.blit(tile.surface, (i*tw, j*th))
         
         # DRAW ITEMS NEXT
+        for pos, items in map.layers[z].items.items():
+            # find highest priority item
+            # get that item's image
+            print(pos, items)
+            self.surface.blit(self.ui.get_tile(33).surface, (pos[0] * 8, pos[1] * 8))
 
         # DRAW ACTORS
         for actor in map.actors:
-            tile = self.ui.get_tile(actor.tile_id)
-            self.surface.blit(tile.surface, (actor.position[0] * tw, actor.position[1] * th))
+            if actor.position[2] == z:
+                tile = self.ui.get_tile(actor.tile_id)
+                self.surface.blit(tile.surface, (actor.position[0] * tw, actor.position[1] * th))
 
     def set_zero(self):
         self.map = np.zeros(self.size, dtype=int)

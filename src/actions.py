@@ -27,6 +27,9 @@ class ActionWalk(Action):
         
         if self.subject.can_move_to(world, target_position):
             self.subject.position = target_position
+            return (True, None)
+        else:
+            return (False, None)
 
 class ActionPickup(Action):
 
@@ -35,22 +38,10 @@ class ActionPickup(Action):
         self.items = items # a list of items, passed from the UI or the monster AI
         super().__init__()
 
-    def perform(self, context):
-        print('picking up ', self.items)
-        # remove the items from the subject's cell
-        # add the items to the subject's inventory.
-        pass
-        # if type(self.subject) is Player:
-            # check if there are any items there.
-            # 
-            # if not, failure.
-
-        # if monster, allow them to select what items they pick up.
-
-class ActionQuit(Action):
-    
-    def __init__(self):
-        super().__init__()
-    
-    def perform(self, context):
-        pass
+    def perform(self, world: World):
+        if self.items:
+            self.subject.inventory.append(self.items)
+            world.map.layers[self.subject.position[2]].items.pop((self.subject.position[0], self.subject.position[1]))
+            return (True, f'You pick up the {self.items}.')
+        else:
+            return (False, 'There is nothing here to pick up.')

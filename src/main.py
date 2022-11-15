@@ -9,10 +9,11 @@
 # gui
 # text engine
 
+import sys
 import pygame as pg
 import numpy as np
 from pygame.locals import *
-from actions import Action, ActionQuit
+from actions import *
 from player import Player
 from block import Block
 from actor import Actor
@@ -20,60 +21,48 @@ from monster import Monster
 from ui.ui_manager import UIManager
 from ui.ui_tile import UITile
 from ui.ui_tilemap import UITileMap
+from ui.ui_controls import UI_CheckboxList
 from world import Map, World
+import config
 
 def main():
 
-    zoom_scale = 3
+    # TODO make this like: 'map': { 'size': (blah, blah), 'alignment': centred}, 'panel': {'size': (23, 2), 'alignment':'bottom-left' (then ref some other object to snap it to)}
+    ui_config = {
+        'screen_size':          (55, 36),
+        'map_size':             (21, 16),
+        'left_panel_size':      (21, 16),        
+        'left_margin':          5,
+        'right_margin':         1,
+        'gutter':               1,
+        'tile_size':            (8, 8),
+        'zoom_scale':           3
+    }
+
+    ui_config['top_margin'] =           int((1/3) * (ui_config['screen_size'][1] - ui_config['map_size'][1]))
+    ui_config['bottom_margin'] =        ui_config['screen_size'][1] - ui_config['map_size'][1] - ui_config['top_margin']
+    ui_config['left_panel_position'] =  (ui_config['left_margin'], ui_config['top_margin'])
+    ui_config['map_position'] =         (ui_config['left_margin'] + ui_config['left_panel_size'][0] + ui_config['gutter'], ui_config['top_margin'])
+    ui_config['status_position'] =      (ui_config['map_position'][0], ui_config['map_position'][1] + ui_config['map_size'][1] + 1)
 
     pg.init()
     pg.display.set_caption('zeal')
-    screen = pg.display.set_mode((8 * 23 * zoom_scale, 8 * 18 * zoom_scale))
-    screen_buffer = pg.Surface((8 * 23, 8 * 18))
-
+    screen = pg.display.set_mode((ui_config['tile_size'][0] * ui_config['screen_size'][0] * ui_config['zoom_scale'], ui_config['tile_size'][1] * ui_config['screen_size'][1] * ui_config['zoom_scale']))
+    screen_buffer = pg.Surface((ui_config['tile_size'][0] * ui_config['screen_size'][0], ui_config['tile_size'][1] * ui_config['screen_size'][1]))
+    
+    # pg.display.toggle_fullscreen()
     # ui tileset and blockset
+
     ts = []
     bs = []
 
-    def create_block_and_tile(name: str, walkable: bool, img_path: str) -> None:
-        block = Block(name, walkable)
-        tile = UITile(name, pg.image.load(img_path))
+    # LOAD TEST TILES
+
+    for tile in config.test_tiles:
+        block = Block(tile['name'], tile['walkable'])
+        tile = UITile(tile['name'], pg.image.load(tile['image']))
         bs.append(block)
         ts.append(tile)
-
-    create_block_and_tile('border', False, 'img/test_border.png')
-    create_block_and_tile('blank', True, 'img/test_blank.png')
-    create_block_and_tile('dot', True, 'img/test_dot.png')
-    create_block_and_tile('fish', True, 'img/test_fish.png')
-    create_block_and_tile('skull', True, 'img/test_skull.png')
-    create_block_and_tile('water', False, 'img/test_water.png')
-    create_block_and_tile('wall', False, 'img/test_wall.png')
-    create_block_and_tile('dots', True, 'img/test_dots.png')
-    create_block_and_tile('stairs', True, 'img/test_stairs.png')
-    create_block_and_tile('grass', True, 'img/test_grass.png')
-    create_block_and_tile('stagger', True, 'img/test_stagger.png')
-    create_block_and_tile('grid', True, 'img/test_grid.png')
-    create_block_and_tile('door', True, 'img/test_door.png')
-    create_block_and_tile('tuft', True, 'img/test_tuft.png')
-    create_block_and_tile('bridge_left', False, 'img/test_bridge_left.png')
-    create_block_and_tile('bridge_right', False, 'img/test_bridge_right.png')
-    create_block_and_tile('bridge_shadow', False, 'img/test_bridge_shadow.png')
-    create_block_and_tile('waves', False, 'img/test_waves.png')
-    create_block_and_tile('water_bank', False, 'img/test_water_bank.png')
-    create_block_and_tile('wall_top', False, 'img/test_wall_top.png')
-    create_block_and_tile('wall_thin', False, 'img/test_wall_thin.png')
-    create_block_and_tile('bench_n_end', False, 'img/test_bench_n_end.png')
-    create_block_and_tile('bench_ns', False, 'img/test_bench_ns.png')
-    create_block_and_tile('bench_sw_corner', False, 'img/test_bench_sw_corner.png')
-    create_block_and_tile('bench_ew', False, 'img/test_bench_ew.png')
-    create_block_and_tile('wall_top_full', False, 'img/wall_top_full.png')
-    create_block_and_tile('stairs_up', True, 'img/test_stairs_up.png')
-    create_block_and_tile('tree_1_bottom', False, 'img/test_tree_1_bottom.png')
-    create_block_and_tile('tree_1_top', False, 'img/test_tree_1_top.png')
-    create_block_and_tile('pot', False, 'img/test_pot.png')
-    create_block_and_tile('tree_2_bottom', False, 'img/test_tree_2_bottom.png')
-    create_block_and_tile('tree_2_top', False, 'img/test_tree_2_top.png')
-    create_block_and_tile('sky', False, 'img/test_sky.png') #32
 
     player_tile = UITile('player', pg.image.load('img/test_player.png'))
     ts.append(player_tile)
@@ -81,100 +70,90 @@ def main():
 
     monster_tile = UITile('monster', pg.image.load('img/test_monster.png'))
     ts.append(monster_tile)
-    
-
-    test_map_array = np.array([[[1, 5, 5, 5, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 5, 5],
-                                [1, 5, 5, 5, 5, 1, 1, 1,31,25,19,19,19,19,19,19,25, 1, 5, 5, 5],
-                                [1, 5, 5, 5, 5, 1,28, 1,30,25, 6,12, 6, 6, 6, 6,25, 1, 1, 1, 1],
-                                [1, 5, 5, 5, 5, 1,27, 1, 1,25, 7, 1, 1, 1, 1,29,25, 1, 1, 2, 1],
-                                [1, 5, 5, 5, 5, 1,19,19,19,19, 2, 1, 2,21, 1, 1,25, 1,14,16,16],
-                                [1, 5, 5, 5, 5, 2, 6, 6, 6, 6, 1, 1, 7,22, 1, 1,25, 1, 5, 5, 5],
-                                [2, 2, 2, 13,2, 2, 1,29, 1, 1, 1, 1, 1,23,24,24,25, 1, 5, 5, 5],
-                                [2, 2, 2, 2, 2, 2, 2, 2, 2, 7, 2, 1, 1, 2, 1, 1,25,13, 5, 5, 5],
-                                [2,14,16,16,15, 1,25, 2, 2, 2, 2, 1, 1, 1, 1,26,25, 1, 5, 5, 5],
-                                [2, 5, 5, 5, 5, 1,19,19,19,19, 1, 1,19,19,19,19,19, 1, 5, 5, 5],
-                                [2, 5, 5, 5, 5, 1, 6, 6, 6, 6, 1, 1,20,20,20,20,20, 1, 5, 5, 5],
-                                [1,17, 5,17, 5, 1, 1, 9, 1, 1, 1, 1, 1, 7, 1, 1, 1, 1, 5, 5, 5],
-                                [1, 5, 5,17,17, 1, 4, 1, 1, 7, 2, 1, 1, 1,18,18,18,18, 5, 5, 5],
-                                [1, 5, 5, 5, 5, 3, 1, 1, 1, 1, 1, 2, 1, 1, 5, 5, 5, 5, 5, 5, 5],
-                                [1, 5, 5, 5, 5,18,18,18,18,18, 2, 2,18,18, 5, 5, 5, 5, 5, 5, 5],
-                                [1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5]],
-
-                               [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25,19,19,19,19,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25,20,20,20,20,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25, 2, 2, 2, 2,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25,29, 2, 2, 2,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25,29, 2, 2, 2,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25, 2, 2, 2, 2,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25, 2, 2, 2, 2,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,25, 2,29, 2, 8,25, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,19,19,19,19,19,19, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,20,20,20,20,20,20, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
-
-                               [[32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25,19,19,19,19,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25,20,20,20,20,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25, 2, 2, 2, 2,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25,29, 2, 2, 2,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25,29, 2, 2, 2,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25, 2, 2, 2, 2,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25, 2, 2, 2, 2,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,25, 2,29, 2, 8,25,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,19,19,19,19,19,19,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,20,20,20,20,20,20,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32],
-                                [32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32]]])
-
-    print(test_map_array.shape)
-    print(test_map_array[0])
 
     world = World()
     test_map = Map(bs, bs[0], (21, 16))
     test_map.set_random((21, 16))
     test_map.add_actor(player)
-    test_map.load(test_map_array)
+    test_map.load(config.test_map_array)
     for _ in range(4):
         monster = Monster(len(ts) - 1)
         test_map.add_actor(monster)
     world.set_current_map(test_map)
     world.next_actor()
 
-    ui_mgr = UIManager(screen_buffer, (34, 23), ts, (8, 8), (32, 21))
+    ui_mgr = UIManager(screen_buffer, ui_config, ts)
 
     running = True
     action: Action = None
 
+    ui_mgr.render(world.map, player.position[2])
+    screen_buffer.blit(ui_mgr.surface, (0, 0))
+    ui_mode = False
+
+    # RESIZE
+    pg.transform.scale(screen_buffer, screen.get_size(), screen)
+    pg.display.flip()
+
     while running:
-  
-        while not action:
-            action = world.curr_actor.next_action(world, ui_mgr)
-        if type(action) is ActionQuit:
-            running = False
-        else:
-            action.perform(world)
-            world.next_actor()
-            # this can return success or failure - if it fails, player can try another action.
-        action = None
+
+        ##
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            elif event.type == KEYDOWN:
+                if ui_mode:
+                    if event.key == K_UP:
+                        ui_mgr.active_ui.up()
+                    if event.key == K_DOWN:
+                        ui_mgr.active_ui.down()
+                    if event.key in [K_SPACE, K_RETURN]:
+                        ui_mgr.active_ui.toggle()
+                    if event.key == K_ESCAPE: # TODO how to move this to the point where the UI is summoned?
+                        player.set_next_action( ActionPickup(player, items) )
+                        ui_mode = False
+                else:       # get player char input
+                    # TODO move this to player event handler fn
+                    if event.key == K_UP:
+                        player.set_next_action( ActionWalk(player, (0, -1, 0)) )
+                    if event.key == K_DOWN:
+                        player.set_next_action( ActionWalk(player, (0, 1, 0)) )
+                    if event.key == K_LEFT:
+                        player.set_next_action( ActionWalk(player, (-1, 0, 0)) )
+                    if event.key == K_RIGHT:
+                        player.set_next_action( ActionWalk(player, (1, 0, 0)) )
+                    if event.key == K_q:
+                        player.set_next_action( ActionWalk(player, (0, 0, 1)) )
+                    if event.key == K_z:
+                        player.set_next_action( ActionWalk(player, (0, 0, -1)) )
+                    if event.key == K_COMMA:
+                        x, y, z = player.position
+                        items = world.map.layers[z].items.get((x, y))
+                        ui_mgr.active_ui = UI_CheckboxList(ui_mgr.ui_config['left_panel_size'], items, 'PICK UP?')
+                        ui_mode = True
+        
+        if not ui_mode:
+            action = world.curr_actor.get_next_action()
+
+            if action is None:
+                continue
+            successful, message = action.perform(world)
+            if message:
+                print(message)
+            if successful:
+                world.next_actor()
+
+            action = None
 
         # RENDER
-        
         ui_mgr.render(world.map, player.position[2])
         screen_buffer.blit(ui_mgr.surface, (0, 0))
-        # player.draw(screen_buffer)
         
         # RESIZE
         pg.transform.scale(screen_buffer, screen.get_size(), screen)
         pg.display.flip()
-    
 
 if __name__=="__main__":
     main()

@@ -7,7 +7,7 @@ class UIText:
     default_mapping = ['01234567890',
                        'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                        'abcdefghijklmnopqrstuvwxyz',
-                       ' .,']
+                       ' .,?<>']
 
     def __init__(self, atlas: pg.Surface, char_size: tuple[int, int] = (8, 8), mapping = None):
         
@@ -16,7 +16,7 @@ class UIText:
         else:
             self.mapping = mapping
 
-        self.atlas = pg.image.load('img/text_atlas.png')    # TODO pass this to init function
+        self.atlas = atlas
         self.char_size = char_size
 
         # generate dictionary of char: rect

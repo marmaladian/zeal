@@ -7,7 +7,7 @@ class MapLayer:
     def __init__(self, size: tuple[int, int]) -> None:
         self.size = size
         self.terrain = np.zeros(size, dtype=int)    
-        self.items = { (0, 0): ['a fried egg', 'egg', 'an oily, peppery soup'],
+        self.items = { (0, 0): ['a tomato', 'chutney', 'an oily, peppery soup'],
                        (8, 8): ['hat', 'turnip', 'a pinch of spice']}
 
     def set_random(self, block_set : list[Block]):

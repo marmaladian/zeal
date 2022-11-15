@@ -17,10 +17,10 @@ class Actor:
 
     def __init__(self, tile_id) -> None:
         self.tile_id = tile_id
-        self.position = (1, 1, 0)
+        self.position = (7, 7, 0)
         self.inventory = []
 
-    def next_action(self, world: World):
+    def get_next_action(self):
         # for player, get UI action
         # for monster, AI action
         pass
