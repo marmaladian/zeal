@@ -11,26 +11,33 @@ class UIManager:
         self.tile_set = tile_set
         self.tile_size = ui_config['tile_size']
         self.map_size = ui_config['map_size']
-        self.map = UITileMap(self)
-        self.active_ui = None
+        self.map = UITileMap(self) # abstract these into a UI elements list?
+        self.active_ui = None # instead of tracking ui_mode in the main loop, check whether active_ui is the game map?
         self.surface = pg.Surface((self.size[0] * self.tile_size[0], self.size[1] * self.tile_size[1]))
         self.text_normal = UIText(pg.image.load('img/text_atlas.png'), (8, 8))
+        self.text_invert = UIText(pg.image.load('img/text_atlas_inv.png'), (8, 8))
 
     def render(self, block_map, z_layer):
         # update
         self.map.render(block_map, z_layer)
         
         self.surface.fill(pg.Color(12, 16, 28))
-        self.surface.blit(self.map.surface, (self.ui_config['map_position'][0] * self.ui_config['tile_size'][0], self.ui_config['map_position'][1] * self.ui_config['tile_size'][1]))
+        self.surface.blit(self.map.surface, self.to_pixel_pos(self.ui_config['map_position']))
 
         # render stats
         
-        status_line = self.text_normal.create_surface('VIT 11  HEAT 33', 0)
-        self.surface.blit(status_line, (self.ui_config['status_position'][0] * self.ui_config['tile_size'][0], self.ui_config['status_position'][1] * self.ui_config['tile_size'][1]))
+        status_line = self.text_normal.create_surface('VIT 11  HEAT 30', 0)
+        self.surface.blit(status_line, self.to_pixel_pos(self.ui_config['status_position']))
 
         if self.active_ui:
             self.active_ui.render()
-            self.surface.blit(self.active_ui.surface, (self.ui_config['left_panel_position'][0] * self.ui_config['tile_size'][0], self.ui_config['left_panel_position'][1] * self.ui_config['tile_size'][1]))
+            self.surface.blit(self.active_ui.surface, self.to_pixel_pos(self.ui_config['left_panel_position']))
 
     def get_tile(self, index):
         return self.tile_set[index]
+
+    def to_pixel_pos(self, tile_pos: tuple[int, int]):
+        return (tile_pos[0] * self.tile_size[0], tile_pos[1] * self.tile_size[1])
+
+    def to_tile_pos(self, pixel_pos: tuple[int, int]):
+        return (pixel_pos[0] // self.tile_size[0], pixel_pos[1] // self.tile_size[1])

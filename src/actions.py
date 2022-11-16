@@ -41,7 +41,10 @@ class ActionPickup(Action):
     def perform(self, world: World):
         if self.items:
             self.subject.inventory.append(self.items)
-            world.map.layers[self.subject.position[2]].items.pop((self.subject.position[0], self.subject.position[1]))
+            world.map.layers[self.subject.position[2]].items[(self.subject.position[0], self.subject.position[1])] = [i for i in world.map.layers[self.subject.position[2]].items[(self.subject.position[0], self.subject.position[1])] if (i not in self.items)]
+            if world.map.layers[self.subject.position[2]].items[(self.subject.position[0], self.subject.position[1])] == []:
+                print('removing item entry for position')
+                world.map.layers[self.subject.position[2]].items.pop((self.subject.position[0], self.subject.position[1]))
             return (True, f'You pick up the {self.items}.')
         else:
-            return (False, 'There is nothing here to pick up.')
+            return (False, 'There is nothing here to pick up OR you pick up nothing.')

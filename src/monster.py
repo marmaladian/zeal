@@ -11,9 +11,9 @@ class Monster(Actor):
         self.action_list = [ActionWalk(self, ( 0, -1,  0)),
                             ActionWalk(self, ( 0,  1,  0)),
                             ActionWalk(self, (-1,  0,  0)),
-                            ActionWalk(self, ( 1,  0,  0))
-                            # ActionWalk(self, ( 0,  0,  1)),
-                            # ActionWalk(self, ( 0,  0, -1))
+                            ActionWalk(self, ( 1,  0,  0)),
+                            ActionWalk(self, ( 0,  0,  1)),
+                            ActionWalk(self, ( 0,  0, -1))
                             ]
 
     def get_next_action(self):

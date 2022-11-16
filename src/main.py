@@ -10,6 +10,7 @@
 # text engine
 
 import sys
+from datetime import datetime
 import pygame as pg
 import numpy as np
 from pygame.locals import *
@@ -32,8 +33,8 @@ def main():
         'screen_size':          (55, 36),
         'map_size':             (21, 16),
         'left_panel_size':      (21, 16),        
-        'left_margin':          5,
-        'right_margin':         1,
+        'left_margin':          2,
+        'right_margin':         2,
         'gutter':               1,
         'tile_size':            (8, 8),
         'zoom_scale':           3
@@ -46,11 +47,10 @@ def main():
     ui_config['status_position'] =      (ui_config['map_position'][0], ui_config['map_position'][1] + ui_config['map_size'][1] + 1)
 
     pg.init()
-    pg.display.set_caption('zeal')
+    pg.display.set_caption(f'Zeal — {datetime.now().strftime("%d-%b-%Y %-I:%M:%S %p")}')
     screen = pg.display.set_mode((ui_config['tile_size'][0] * ui_config['screen_size'][0] * ui_config['zoom_scale'], ui_config['tile_size'][1] * ui_config['screen_size'][1] * ui_config['zoom_scale']))
     screen_buffer = pg.Surface((ui_config['tile_size'][0] * ui_config['screen_size'][0], ui_config['tile_size'][1] * ui_config['screen_size'][1]))
     
-    # pg.display.toggle_fullscreen()
     # ui tileset and blockset
 
     ts = []
@@ -60,16 +60,12 @@ def main():
 
     for tile in config.test_tiles:
         block = Block(tile['name'], tile['walkable'])
-        tile = UITile(tile['name'], pg.image.load(tile['image']))
+        #tile = UITile(tile['name'], pg.image.load(tile['image']))
+        tile = UITile(tile['name'], ui_config['tile_size'], tile['data'])
         bs.append(block)
         ts.append(tile)
 
-    player_tile = UITile('player', pg.image.load('img/test_player.png'))
-    ts.append(player_tile)
-    player = Player(len(ts) - 1)
-
-    monster_tile = UITile('monster', pg.image.load('img/test_monster.png'))
-    ts.append(monster_tile)
+    player = Player(34)
 
     world = World()
     test_map = Map(bs, bs[0], (21, 16))
@@ -77,7 +73,7 @@ def main():
     test_map.add_actor(player)
     test_map.load(config.test_map_array)
     for _ in range(4):
-        monster = Monster(len(ts) - 1)
+        monster = Monster(35)
         test_map.add_actor(monster)
     world.set_current_map(test_map)
     world.next_actor()
@@ -97,8 +93,6 @@ def main():
 
     while running:
 
-        ##
-
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -112,7 +106,9 @@ def main():
                     if event.key in [K_SPACE, K_RETURN]:
                         ui_mgr.active_ui.toggle()
                     if event.key == K_ESCAPE: # TODO how to move this to the point where the UI is summoned?
-                        player.set_next_action( ActionPickup(player, items) )
+                        selected_items = ui_mgr.active_ui.get_checked()
+                        player.set_next_action( ActionPickup(player, selected_items) )
+                        ui_mgr.active_ui = None
                         ui_mode = False
                 else:       # get player char input
                     # TODO move this to player event handler fn
@@ -131,7 +127,7 @@ def main():
                     if event.key == K_COMMA:
                         x, y, z = player.position
                         items = world.map.layers[z].items.get((x, y))
-                        ui_mgr.active_ui = UI_CheckboxList(ui_mgr.ui_config['left_panel_size'], items, 'PICK UP?')
+                        ui_mgr.active_ui = UI_CheckboxList(ui_mgr, ui_mgr.ui_config['left_panel_size'], items, 'PICK UP?')
                         ui_mode = True
         
         if not ui_mode:

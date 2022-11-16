@@ -1,4 +1,5 @@
 from __future__ import annotations
+import random
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ui.ui_manager import *
@@ -27,21 +28,23 @@ class UITileMap:
         th, tw = self.ui.tile_size
         for i in range(m):
             for j in range(n):
-                tile = self.ui.get_tile(terrain_data[i, j])
-                self.surface.blit(tile.surface, (i*tw, j*th))
+                tile : UITile = self.ui.get_tile(terrain_data[i, j])
+                fg = random.randrange(0, 6)
+                bg = random.randrange(0, 6)
+                tile.draw(self.surface, (fg, bg), (i*tw, j*th))
+                # self.surface.blit(tile.surface, (i*tw, j*th))
         
         # DRAW ITEMS NEXT
         for pos, items in map.layers[z].items.items():
             # find highest priority item
             # get that item's image
-            print(pos, items)
-            self.surface.blit(self.ui.get_tile(33).surface, (pos[0] * 8, pos[1] * 8))
+            self.ui.get_tile(33).draw(self.surface, (1, 3), (pos[0] * 8, pos[1] * 8))
 
         # DRAW ACTORS
         for actor in map.actors:
             if actor.position[2] == z:
                 tile = self.ui.get_tile(actor.tile_id)
-                self.surface.blit(tile.surface, (actor.position[0] * tw, actor.position[1] * th))
+                tile.draw(self.surface, (0, 4), (actor.position[0] * tw, actor.position[1] * th))
 
     def set_zero(self):
         self.map = np.zeros(self.size, dtype=int)

@@ -1,20 +1,23 @@
 import pygame as pg
+from ui.ui_manager import UIManager
 
 from ui.ui_text import UIText
 
 class UIControl:
 
-    def __init__(self, label = None) -> None:
-        self.label = label
+    def __init__(self, ui: UIManager) -> None:
+        self.ui = ui
 
 class UI_Checkbox(UIControl):
 
-    def __init__(self, position: tuple[int, int], label = None) -> None:
+    def __init__(self, ui: UIManager, position: tuple[int, int], label = 'UNKNOWN', refers_to = None) -> None:
         self.checked = False
         self.position = position
+        self.refers_to = refers_to
         self.update_size()
         self.surface = pg.Surface(self.size)
-        super().__init__(label)
+        self.label = label
+        super().__init__(ui)
 
     def value(self):
         return self.checked
@@ -46,7 +49,7 @@ class UI_Checkbox(UIControl):
 
 class UI_CheckboxList(UIControl):
     
-    def __init__(self, size: tuple[int, int], list_items: list, title = None):
+    def __init__(self, ui: UIManager, size: tuple[int, int], list_items: list, title = None):
         """List items must have a _.label_ string property."""
         self.list_items = []
         self.size = size
@@ -54,9 +57,10 @@ class UI_CheckboxList(UIControl):
         self.cursor = 0
         if list_items:
             for li in list_items:
-                checkbox = UI_Checkbox((0, 0), li)
+                checkbox = UI_Checkbox(ui, (0, 0), li, li)
                 checkbox.render()
                 self.list_items.append(checkbox)
+        super().__init__(ui)
 
     def toggle(self):
         self.list_items[self.cursor].toggle()
@@ -70,8 +74,6 @@ class UI_CheckboxList(UIControl):
     def render(self):
         # TODO move ui_text creation to uimanager
         # TODO don't recreate text each time the menu is re-rendered, cache it
-        uitext = UIText(pg.image.load('img/text_atlas.png'), (8, 8))
-        uitext_inv = UIText(pg.image.load('img/text_atlas_inv.png'), (8, 8))
         if self.title:
             self.surface = pg.Surface((self.size[0] * 8, (len(self.list_items) + 2) * 8))
         else:
@@ -80,27 +82,31 @@ class UI_CheckboxList(UIControl):
         self.surface.fill(pg.Color(12, 16, 28, 0))
 
         if self.title:
-            title_text = uitext.create_surface(self.title, self.size[0])
+            title_text = self.ui.text_normal.create_surface(self.title, self.size[0])
             self.surface.blit(title_text, (0, 0))
 
-        cursor = uitext.create_surface('>', self.size[0])
+        cursor = self.ui.text_normal.create_surface('>', self.size[0])
         row = 0
         if self.list_items:
             for item in self.list_items:
                 if row == self.cursor:
                     self.surface.blit(cursor, (0, (row + 2) * 8))
                 if item.checked:
-                    t = uitext_inv.create_surface(item.label, self.size[0] - 2)
+                    t = self.ui.text_invert.create_surface(item.label, self.size[0] - 2)
                 else:
-                    t = uitext.create_surface(item.label, self.size[0] - 2)
+                    t = self.ui.text_normal.create_surface(item.label, self.size[0] - 2)
                 if self.title:
                     self.surface.blit(t, (2 * 8, (row + 2) * 8))
                 else:
                     self.surface.blit(t, (2 * 8, row * 8))
                 row += 1
-            
 
-    def values(self):
-        # return the checked state of all the items
-        pass
+    def get_checked(self):
+        checked_items = []
+        for checkbox in self.list_items:
+            if checkbox.checked:
+                checked_items.append(checkbox.refers_to) 
+        print('checked:', checked_items)
+        return checked_items
+        
 

@@ -5,6 +5,7 @@ A little rogue/UltimaIV-like.
 - change input handling so it is 'injected' into the actice UI section, rather than the player object doing the input reading.
 - add 'add item at', 'remove item at' etc. methods to world
 - tile generator (fg/bg colour for sprites)
+- stop the game from continuously redrawing in ui_mode (set sprite colours to random to see)
 # notes
 
 Game objects

@@ -45,6 +45,8 @@ class UIText:
         #s.fill(pg.Color(236, 71, 0))
         row, col = (0, 0)
         for char in text:
+            if char not in self.chars:
+                print('uh oh')
             s.blit(self.chars[char], (col * self.char_size[0], row * self.char_size[1]))
             col += 1
             if col > width:
