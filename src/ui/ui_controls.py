@@ -50,7 +50,6 @@ class UI_Checkbox(UIControl):
 class UI_CheckboxList(UIControl):
     
     def __init__(self, ui: UIManager, size: tuple[int, int], list_items: list, title = None):
-        """List items must have a _.label_ string property."""
         self.list_items = []
         self.size = size
         self.title = title
@@ -62,22 +61,26 @@ class UI_CheckboxList(UIControl):
                 self.list_items.append(checkbox)
         super().__init__(ui)
 
-    def toggle(self):
-        self.list_items[self.cursor].toggle()
+    def activate(self):
+        if self.cursor == len(self.list_items): # cursor is on OK button
+            return self.get_checked()
+        else:
+            self.list_items[self.cursor].toggle()
+            return None
     
     def up(self):
-        self.cursor = max(0, min(self.cursor - 1, len(self.list_items) - 1))
+        self.cursor = max(0, min(self.cursor - 1, len(self.list_items)))
 
     def down(self):
-        self.cursor = max(0, min(self.cursor + 1, len(self.list_items) - 1))
+        self.cursor = max(0, min(self.cursor + 1, len(self.list_items)))
         
     def render(self):
         # TODO move ui_text creation to uimanager
         # TODO don't recreate text each time the menu is re-rendered, cache it
-        if self.title:
-            self.surface = pg.Surface((self.size[0] * 8, (len(self.list_items) + 2) * 8))
-        else:
-            self.surface = pg.Surface((self.size[0] * 8, len(self.list_items) * 8))
+
+        offset = 2 if self.title else 0
+
+        self.surface = pg.Surface((self.size[0] * 8, (len(self.list_items) + offset + 2) * 8)) # +2 is for the gap and then OK button
         
         self.surface.fill(pg.Color(12, 16, 28, 0))
 
@@ -86,7 +89,11 @@ class UI_CheckboxList(UIControl):
             self.surface.blit(title_text, (0, 0))
 
         cursor = self.ui.text_normal.create_surface('>', self.size[0])
+        confirm = self.ui.text_normal.create_surface('OK', self.size[0])
+        confirm_inv = self.ui.text_invert.create_surface('OK', self.size[0])
+
         row = 0
+            
         if self.list_items:
             for item in self.list_items:
                 if row == self.cursor:
@@ -95,11 +102,14 @@ class UI_CheckboxList(UIControl):
                     t = self.ui.text_invert.create_surface(item.label, self.size[0] - 2)
                 else:
                     t = self.ui.text_normal.create_surface(item.label, self.size[0] - 2)
-                if self.title:
-                    self.surface.blit(t, (2 * 8, (row + 2) * 8))
-                else:
-                    self.surface.blit(t, (2 * 8, row * 8))
+                self.surface.blit(t, (2 * 8, (row + offset) * 8))
                 row += 1
+            # draw OK button
+            if self.cursor == len(self.list_items):
+                self.surface.blit(confirm_inv, (0, (row + 1 + offset) * 8))
+            else:
+                self.surface.blit(confirm, (0, (row + 1 + offset) * 8))
+
 
     def get_checked(self):
         checked_items = []

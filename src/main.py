@@ -53,32 +53,36 @@ def main():
     
     # ui tileset and blockset
 
-    ts = []
-    bs = []
+    tile_graphics = {}
+    bs = {}
 
     # LOAD TEST TILES
 
-    for tile in config.test_tiles:
-        block = Block(tile['name'], tile['walkable'])
-        #tile = UITile(tile['name'], pg.image.load(tile['image']))
-        tile = UITile(tile['name'], ui_config['tile_size'], tile['data'])
-        bs.append(block)
-        ts.append(tile)
+    for graphic in config.graphics:
+        tile = UITile(graphic['name'], ui_config['tile_size'], graphic['data'])
+        tile_graphics[graphic['name']] = tile
 
-    player = Player(34)
+    for block in config.tiles:
+        b = Block(block['name'], block['tile'], block['colours'], block['walkable'])
+        bs[block['name']] = b
+
+    player = Player('player')
 
     world = World()
-    test_map = Map(bs, bs[0], (21, 16))
+    test_map = Map(bs, bs['border'], (21, 16))
     test_map.set_random((21, 16))
     test_map.add_actor(player)
     test_map.load(config.test_map_array)
+    test_map.layers[0].items = { (0, 0): ['a tomato', 'chutney', 'an oily, peppery soup'],
+                                 (8, 8): ['hat', 'turnip', 'a pinch of spice']}
+    test_map.layers[1].items = { (15, 5): ['a white gourd', '12 copper coins'] }
     for _ in range(4):
-        monster = Monster(35)
+        monster = Monster('monster')
         test_map.add_actor(monster)
     world.set_current_map(test_map)
     world.next_actor()
 
-    ui_mgr = UIManager(screen_buffer, ui_config, ts)
+    ui_mgr = UIManager(screen_buffer, ui_config, tile_graphics)
 
     running = True
     action: Action = None
@@ -103,11 +107,13 @@ def main():
                         ui_mgr.active_ui.up()
                     if event.key == K_DOWN:
                         ui_mgr.active_ui.down()
-                    if event.key in [K_SPACE, K_RETURN]:
-                        ui_mgr.active_ui.toggle()
-                    if event.key == K_ESCAPE: # TODO how to move this to the point where the UI is summoned?
-                        selected_items = ui_mgr.active_ui.get_checked()
-                        player.set_next_action( ActionPickup(player, selected_items) )
+                    if event.key == K_x:
+                        selected_items = ui_mgr.active_ui.activate()
+                        if selected_items:
+                            player.set_next_action( ActionPickup(player, selected_items) )
+                            ui_mgr.active_ui = None
+                            ui_mode = False
+                    if event.key == K_z:
                         ui_mgr.active_ui = None
                         ui_mode = False
                 else:       # get player char input
@@ -123,13 +129,21 @@ def main():
                     if event.key == K_q:
                         player.set_next_action( ActionWalk(player, (0, 0, 1)) )
                     if event.key == K_z:
-                        player.set_next_action( ActionWalk(player, (0, 0, -1)) )
-                    if event.key == K_COMMA:
+                        # cancel/map move
+                        pass
+                    if event.key == K_x:
+                        # confirm/activate/menu
                         x, y, z = player.position
+                        # if items, pop up ui
                         items = world.map.layers[z].items.get((x, y))
-                        ui_mgr.active_ui = UI_CheckboxList(ui_mgr, ui_mgr.ui_config['left_panel_size'], items, 'PICK UP?')
-                        ui_mode = True
-        
+                        if items:                            
+                            ui_mgr.active_ui = UI_CheckboxList(ui_mgr, ui_mgr.ui_config['left_panel_size'], items, 'PICK UP?')
+                            ui_mode = True
+                        # if stairs, go up/down
+                        elif world.map.tile_at((x, y, z)).name == 'stairs_down':
+                            player.set_next_action( ActionWalk(player, (0, 0, -1)) )
+                        elif world.map.tile_at((x, y, z)).name == 'stairs_up':
+                            player.set_next_action( ActionWalk(player, (0, 0,  1)) )        
         if not ui_mode:
             action = world.curr_actor.get_next_action()
 

@@ -28,17 +28,19 @@ class UITileMap:
         th, tw = self.ui.tile_size
         for i in range(m):
             for j in range(n):
-                tile : UITile = self.ui.get_tile(terrain_data[i, j])
-                fg = random.randrange(0, 6)
-                bg = random.randrange(0, 6)
-                tile.draw(self.surface, (fg, bg), (i*tw, j*th))
+                # NEED TO GET SPRITE FOR BLOCK
+                # MAP HOLDS BLOCK NAME
+                blk = map.tile_at((i, j, z))
+                tile = self.ui.get_tile(blk.tile)
+                #tile : UITile = self.ui.get_tile(terrain_data[i, j])
+                tile.draw(self.surface, blk.colours, (i*tw, j*th))
                 # self.surface.blit(tile.surface, (i*tw, j*th))
         
         # DRAW ITEMS NEXT
         for pos, items in map.layers[z].items.items():
             # find highest priority item
             # get that item's image
-            self.ui.get_tile(33).draw(self.surface, (1, 3), (pos[0] * 8, pos[1] * 8))
+            self.ui.get_tile('chest').draw(self.surface, (3, 1), (pos[0] * 8, pos[1] * 8))
 
         # DRAW ACTORS
         for actor in map.actors:

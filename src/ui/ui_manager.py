@@ -33,8 +33,8 @@ class UIManager:
             self.active_ui.render()
             self.surface.blit(self.active_ui.surface, self.to_pixel_pos(self.ui_config['left_panel_position']))
 
-    def get_tile(self, index):
-        return self.tile_set[index]
+    def get_tile(self, name):
+        return self.tile_set[name]
 
     def to_pixel_pos(self, tile_pos: tuple[int, int]):
         return (tile_pos[0] * self.tile_size[0], tile_pos[1] * self.tile_size[1])

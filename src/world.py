@@ -7,8 +7,7 @@ class MapLayer:
     def __init__(self, size: tuple[int, int]) -> None:
         self.size = size
         self.terrain = np.zeros(size, dtype=int)    
-        self.items = { (0, 0): ['a tomato', 'chutney', 'an oily, peppery soup'],
-                       (8, 8): ['hat', 'turnip', 'a pinch of spice']}
+        self.items = {}
 
     def set_random(self, block_set : list[Block]):
         n = len(block_set)
@@ -50,7 +49,7 @@ class Map:
             l.set_random(self.block_set)
             self.add_layers(l)
 
-    def tile_at(self, position: tuple[int, int, int]):
+    def tile_at(self, position: tuple[int, int, int]) -> Block:
         x, y, z = position
         if (0 <= x < self.size[0]) and (0 <= y < self.size[1]) and (0 <= z < len(self.layers)):
             return self.block_set[self.layers[z].terrain[x, y]]
